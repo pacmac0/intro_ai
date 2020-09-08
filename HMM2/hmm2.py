@@ -90,7 +90,6 @@ def reverseNestedList(lists):
 
 
 def main():
-    print('test')
     getMatricesFromStdIn()
     global obs
     obs = [int(ob) for ob in obs[0]]
@@ -112,7 +111,18 @@ def main():
 
     # reverse the result lists Xt
     sequence = reverseNestedList(Xt)
-    print(sequence)
+
+    str_out = ""
+    if type(sequence[0]) == list:
+        for s in sequence[0]:
+            str_out = str_out + str(s) + ' '
+        str_out = str_out.strip()
+        print(str_out)
+    else:
+        for s in sequence:
+            str_out = str_out + str(s) + ' '
+        str_out = str_out.strip()
+        print(str_out)
 
 if __name__ == "__main__":
     main()

@@ -64,45 +64,17 @@ def matrixMultiply(mat1, mat2):
         for col2_idx in range(len(mat2[0])):
             for val_idx in range(len(row)):
                 res_mat[row1_idx][col2_idx] += row[val_idx] * mat2[val_idx][col2_idx]
+                res_mat[row1_idx][col2_idx] = float("{:.8f}".format(res_mat[row1_idx][col2_idx])) # rounding to two digits
     return res_mat
 
-"""
-returns the column index of starting Observation in b-matrix
-"""
-def getStartObs(pi, b):
-    prob_list = [0 for x in range(len(b[0]))]
-
-    for state_idx, state in enumerate(b):
-        for obs_idx, obs in enumerate(state):
-            prob_list[obs_idx] += pi[0][state_idx] * obs
-
-    return prob_list.index(max(prob_list))
-    
-def getEmissionDistributionAtStepK(k):
-    #for step in range(k):
-
-
-    return 0
-
-
 def main():
-    """
-    p = [[0.4,0.2,0.1,0.3]]
+    getMatricesFromStdIn()
+    next_emission = matrixMultiply(matrixMultiply(pi, a), b)
     
-    m = [[0.6,0.2,0.1,0.1],
-         [0.1,0.4,0.1,0.4],
-         [0.0,0.0,0.7,0.3],
-         [0.0,0.0,0.1,0.9]]
-    """
-    #getMatricesFromStdIn()
-    print(matrixMultiply(matrixMultiply(pi, a), b))
-
-
-
-
-
+    str_out = "{} {}".format(str(len(next_emission)), str(len(next_emission[0])))
+    for val in next_emission[0]:
+        str_out =  str_out + " " + str(val)
+    print(str_out)
 
 if __name__ == "__main__":
     main()
-
-
