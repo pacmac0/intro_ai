@@ -49,6 +49,9 @@ def getMatricesFromStdIn():
 def elemVectorMult(vec1, vec2): # returns [[]]
     return [[vec1[e] * vec2[e] for e in range(len(vec1))]]
 
+def elemMatrixMult(m1, m2):
+    return [[m1[row][col] * m2[row][col] for col in range(len(m1[row]))] for row in range(len(m1))]
+
 def getObsColumnByIndex(idx): # returns []
     if idx >= len(b[0]):
         sys.stderr.write("index out of range")
@@ -73,9 +76,15 @@ def getNextAlpha(alpha, ob_idx): # returns [[]]
     return elemVectorMult(matrixMultiply(alpha, a)[0], getObsColumnByIndex(ob_idx))
 
 def getNextBeta(beta, ob_idx): # returns [[]]
-    beta[0] = matrixMultiply(a, matrixTranspose(elemVectorMult(getObsColumnByIndex(ob_idx), beta[0])))
-    print(beta[0])
-    return matrixTranspose(beta[0]) # transpose back
+    return matrixTranspose(matrixMultiply(a, matrixTranspose(elemVectorMult(getObsColumnByIndex(ob_idx), beta[0]))))
+    # return matrixTranspose(beta[0]) # transpose back
+
+def getDiGammas(alpha_seq, beta_seq):
+    di_gammas = [0] * (len(obs) - 1)
+    for i in range(len(di_gammas)):
+        di_gammas[i] = elemMatrixMult(elemMatrixMult(matrixTranspose(alpha_seq[i] * len(a)), a), (elemMatrixMult([getObsColumnByIndex(obs[i + 1])], beta_seq[i + 1] * len(a))) * len(a))
+        di_gammas[i] = [[di_gammas[i][row][col]/sum(alpha_seq[-1][0]) for col in range(len(di_gammas[i][0]))] for row in range(len(di_gammas[i]))]
+    return di_gammas
 
 def main():
     """
@@ -98,16 +107,27 @@ def main():
     pi = [[0.5, 0.0, 0.0, 0.5]]
     global obs
     obs = [3, 0, 0, 2]
-        
+
     alpha = elemVectorMult(pi[0], getObsColumnByIndex(obs[0])) # inits alpha by element vise multiplication of pi and first observations emission prob.
+    alpha_seq = [alpha]
     for ob in obs[1:]:
         alpha = getNextAlpha(alpha, ob)
-    print(sum(alpha[0]))
+        alpha_seq.append(alpha)
+    print(alpha_seq)
     
     beta = [[1 for x in pi[0]]]
+    beta_seq = [beta]
     for ob in obs[::-1]:
-        beta = getNextBeta(ob)
-        print(beta)
+        beta = getNextBeta(beta, ob)
+        beta_seq.append(beta)
+    beta_seq = beta_seq[::-1]
+    print(beta_seq)
+
+    di_gammas = getDiGammas(alpha_seq, beta_seq)
+    print(len(di_gammas))
+    print(di_gammas)
+
+
 
 if __name__ == "__main__":
     main()
