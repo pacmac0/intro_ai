@@ -119,6 +119,7 @@ def main():
     beta = [[1 for x in pi[0]]]
     for ob in obs[::-1]:
         beta = getNextBeta(ob)
+        print(beta)
     
 
 
