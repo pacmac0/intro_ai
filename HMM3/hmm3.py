@@ -72,12 +72,11 @@ def matrixMultiply(mat1, mat2): # returns [[]]
 def matrixTranspose(m):
     return list(map(list, zip(*m)))
 
-def getNextAlpha(alpha, ob_idx): # returns [[]]
+def getNextAlpha(ob_idx): # returns [[]]
     return elemVectorMult(matrixMultiply(alpha, a)[0], getObsColumnByIndex(ob_idx))
 
 def getNextBeta(beta, ob_idx): # returns [[]]
     return matrixTranspose(matrixMultiply(a, matrixTranspose(elemVectorMult(getObsColumnByIndex(ob_idx), beta[0]))))
-    # return matrixTranspose(beta[0]) # transpose back
 
 def getDiGammas(alpha_seq, beta_seq):
     di_gammas = [0] * (len(obs) - 1)
@@ -85,6 +84,13 @@ def getDiGammas(alpha_seq, beta_seq):
         di_gammas[i] = elemMatrixMult(elemMatrixMult(matrixTranspose(alpha_seq[i] * len(a)), a), (elemMatrixMult([getObsColumnByIndex(obs[i + 1])], beta_seq[i + 1] * len(a))) * len(a))
         di_gammas[i] = [[di_gammas[i][row][col]/sum(alpha_seq[-1][0]) for col in range(len(di_gammas[i][0]))] for row in range(len(di_gammas[i]))]
     return di_gammas
+
+def getDi_Gamma():
+
+    return
+
+def getGamma():
+    return
 
 def main():
     """
@@ -115,6 +121,7 @@ def main():
         alpha_seq.append(alpha)
     print(alpha_seq)
     
+    global beta
     beta = [[1 for x in pi[0]]]
     beta_seq = [beta]
     for ob in obs[::-1]:
@@ -126,7 +133,6 @@ def main():
     di_gammas = getDiGammas(alpha_seq, beta_seq)
     print(len(di_gammas))
     print(di_gammas)
-
 
 
 if __name__ == "__main__":
