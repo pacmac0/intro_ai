@@ -69,13 +69,19 @@ def matrixMultiply(mat1, mat2): # returns [[]]
 def matrixTranspose(m):
     return list(map(list, zip(*m)))
 
-def getNextAlpha(alpha, ob_idx): # returns [[]]
+def getNextAlpha(ob_idx): # returns [[]]
     return elemVectorMult(matrixMultiply(alpha, a)[0], getObsColumnByIndex(ob_idx))
 
-def getNextBeta(beta, ob_idx): # returns [[]]
+def getNextBeta(ob_idx): # returns [[]]
     beta[0] = matrixMultiply(a, matrixTranspose(elemVectorMult(getObsColumnByIndex(ob_idx), beta[0])))
-    print(beta[0])
     return matrixTranspose(beta[0]) # transpose back
+
+def getDi_Gamma():
+
+    return
+
+def getGamma():
+    return
 
 def main():
     """
@@ -98,16 +104,24 @@ def main():
     pi = [[0.5, 0.0, 0.0, 0.5]]
     global obs
     obs = [3, 0, 0, 2]
-        
+    
+    global di_gamma
+    di_gamma = [[0 for n in pi[0]]]
+    global gamma
+    gamma = [[0 for n in pi[0]]]
+    
+    global alpha
     alpha = elemVectorMult(pi[0], getObsColumnByIndex(obs[0])) # inits alpha by element vise multiplication of pi and first observations emission prob.
     for ob in obs[1:]:
-        alpha = getNextAlpha(alpha, ob)
-    print(sum(alpha[0]))
+        alpha = getNextAlpha(ob)
     
+    global beta
     beta = [[1 for x in pi[0]]]
     for ob in obs[::-1]:
         beta = getNextBeta(ob)
         print(beta)
+    
+
 
 if __name__ == "__main__":
     main()
