@@ -79,12 +79,12 @@ def getNextBeta(ob_idx): # returns [[]]
 def getProbOfSequence():
     return sum(alpha[0])
 
+def getGamma():
+    return [(alpha[0][i] * beta[0][i])/ getProbOfSequence() for i in range(len(alpha[0]))]
+
 def getDi_Gamma():
     
     return
-
-def getGamma():
-    return [(alpha[0][i] * beta[0][i])/ getProbOfSequence() for i in range(len(alpha[0]))]
 
 def main():
     """
