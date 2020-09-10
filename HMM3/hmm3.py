@@ -106,9 +106,8 @@ def main():
     
     beta = [[1 for x in pi[0]]]
     for ob in obs[::-1]:
-        beta = getNextBeta(beta, ob)
-    print(beta)
-    print(sum(beta[0]))
+        beta = getNextBeta(ob)
+        print(beta)
 
 if __name__ == "__main__":
     main()
