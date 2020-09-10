@@ -76,12 +76,15 @@ def getNextBeta(ob_idx): # returns [[]]
     beta[0] = matrixMultiply(a, matrixTranspose(elemVectorMult(getObsColumnByIndex(ob_idx), beta[0])))
     return matrixTranspose(beta[0]) # transpose back
 
-def getDi_Gamma():
+def getProbOfSequence():
+    return sum(alpha[0])
 
+def getDi_Gamma():
+    
     return
 
 def getGamma():
-    return
+    return [(alpha[0][i] * beta[0][i])/ getProbOfSequence() for i in range(len(alpha[0]))]
 
 def main():
     """
@@ -114,13 +117,15 @@ def main():
     alpha = elemVectorMult(pi[0], getObsColumnByIndex(obs[0])) # inits alpha by element vise multiplication of pi and first observations emission prob.
     for ob in obs[1:]:
         alpha = getNextAlpha(ob)
+        #print(alpha)
     
     global beta
     beta = [[1 for x in pi[0]]]
     for ob in obs[::-1]:
         beta = getNextBeta(ob)
-        print(beta)
+        #print(beta)
     
+    print(getGamma())
 
 
 if __name__ == "__main__":

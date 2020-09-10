@@ -94,10 +94,7 @@ def main():
         prev_alpha = elemVectorMult(matrixMultiply(prev_alpha, a)[0], getObsColumnByIndex(ob))
         alpha_timeline.append(prev_alpha)
     
-    sum = 0
-    for val in prev_alpha[0]:
-        sum += val
-    print(sum)
+    print(sum(prev_alpha[0]))
 
 if __name__ == "__main__":
     main()
