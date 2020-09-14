@@ -68,46 +68,17 @@ def getObsColumnByIndex(idx): # returns []
         sys.stderr.write("index out of range")
     return [row[idx] for row in b]
 
-""" Compromised !!!!!!!!!!!!!!!
-def getNextAlpha(alpha_t, new_t):
-    new_alpha_t = elemVectorMult(matrixMultiply([alpha_t], a)[0], getObsColumnByIndex(obs[new_t]))
-    cts[new_t] = 1/sum(alpha_t)
-    new_alpha_t = [alpha_ti * cts[new_t] for alpha_ti in new_alpha_t]
-    return new_alpha_t
-
-
-def getNextBeta(beta_t1, new_t):
-
-    new_beta_t = [0.0 for x in range(n)]
-    observation = getObsColumnByIndex(obs[new_t+1])
-    for i in range(n-1):
-        for j in range(n-1):
-            new_beta_t[i] =+ a[i][j] * observation[j] * beta_t1[j]
-        # scale
-        new_beta_t[i] = cts[new_t] * new_beta_t[i]
-    return new_beta_t
-"""
-def getGammas(t):
-    observation = getObsColumnByIndex(obs[t])
-    gamma_t = [0.0 for v in range(n)]
-    di_gamma_t = [[0.0 for c in range(n)] for r in range(n)]
-    for i in range(n):
-        for j in range(n):
-            di_gamma_t[i][j] = alpha_t_list[t][i] * a[i][j] * observation[j] * beta_t_list[t][j]
-            gamma_t[i] =+ di_gamma_t[i][j]
-    return gamma_t, di_gamma_t
-
 # re-estimate pi
 def reestimatePi():
     pi = gamma_t_list[0]
 
 # re-estimate A
 def reestimateA():
-    for i in range(n-1):
+    for i in range(n):
         denominator = 0
         for t in range(t_total-2):
             denominator =+ gamma_t_list[t][i]
-        for j in range(n-1):
+        for j in range(n):
             numerator = 0
             for t in range(t_total-2):
                 numerator =+ di_gamma_t_list[t][i][j]
@@ -115,11 +86,11 @@ def reestimateA():
 
 # re-estimate B
 def reestimateB():
-    for i in range(n-1):
+    for i in range(n):
         denominator = 0
         for t in range(t_total-1):
             denominator =+ gamma_t_list[t][i]
-        for j in range(m-1):
+        for j in range(m):
             numerator = 0
             for t in range(t_total-1):
                 if j == obs[t]:
@@ -152,64 +123,91 @@ def main():
     getMatricesFromStdIn()
     
     # iterating
-    max_interations = 30
+    max_interations = 20
     iterations_done = 0
-    logProb = 0.0
     oldLogProb = -float('inf')
     
-    # init alpha and beta (scaled)
-    alpha_t = elemVectorMult(pi, getObsColumnByIndex(obs[0]))
-    # scaling
-    global cts
-    cts = [0.0 for t in range(t_total)]
-    cts[0] = 1/sum(alpha_t)
-    alpha_t = [alpha_t_item * cts[0] for alpha_t_item in alpha_t]
-    
-    global alpha_t_list
-    alpha_t_list = [alpha_t]
-    for t in range(1, t_total):
-        alpha_t = elemVectorMult(matrixMultiply([alpha_t], a)[0], getObsColumnByIndex(obs[t]))
-        cts[t] = 1/sum(alpha_t)
-        alpha_t = [alpha_ti * cts[t] for alpha_ti in alpha_t]
-        alpha_t_list.append(alpha_t)
+    while True:
 
-    # beta
-    global beta_t_list
-    beta_t_list = [[cts[-1] for t in range(n)]]
+        # init alpha and beta (scaled)
+        alpha_t = elemVectorMult(pi, getObsColumnByIndex(obs[0]))
+        # scaling
+        global cts
+        cts = [0.0 for t in range(t_total)]
+        cts[0] = 1/sum(alpha_t)
+        alpha_t = [alpha_t_item * cts[0] for alpha_t_item in alpha_t]
+        
+        global alpha_t_list
+        alpha_t_list = [alpha_t]
+        for t in range(1, t_total):
+            alpha_t = elemVectorMult(matrixMultiply([alpha_t], a)[0], getObsColumnByIndex(obs[t]))
+            cts[t] = 1/sum(alpha_t)
+            alpha_t = [alpha_ti * cts[t] for alpha_ti in alpha_t]
+            alpha_t_list.append(alpha_t)
 
-    for t in range(t_total-2, -1, -1):
-        new_beta_t = [0.0 for x in range(n)]
-        observation = getObsColumnByIndex(obs[t+1])
-        for i in range(n):
-            for j in range(n):
-                new_beta_t[i] += a[i][j] * observation[j] * beta_t_list[-1][j]
-            # scale
-            new_beta_t[i] *= cts[t]
-        beta_t_list.append(new_beta_t)
-    
-    # di_gamma and gamma for scalled alpha, beta
-    global di_gamma_t_list
-    di_gamma_t_list = []
-    global gamma_t_list # [[[]]]
-    gamma_t_list = [] # [[]]
-    for t in range(t_total-2):
-        gamma_t, di_gamma_t = getGammas(t)
-        gamma_t_list.append(gamma_t)
-        di_gamma_t_list.append(di_gamma_t)
-    # special case gamma_T-1(i)
-    gamma_t_list.append(alpha_t_list[t_total-2])
+        # beta
+        global beta_t_list
+        beta_t_list = [[cts[-1] for t in range(n)]]
 
-    # re etimate the HMM lambda 
-    reestimatePi()
-    reestimateB()
-    reestimateA()
+        for t in range(t_total-2, -1, -1):
+            new_beta_t = [0.0 for x in range(n)]
+            observation = getObsColumnByIndex(obs[t+1])
+            for i in range(n):
+                for j in range(n):
+                    new_beta_t[i] += a[i][j] * observation[j] * beta_t_list[-1][j]
+                # scale
+                new_beta_t[i] *= cts[t]
+            beta_t_list.append(new_beta_t)
+        
+        # di_gamma and gamma for scalled alpha, beta
+        global di_gamma_t_list
+        di_gamma_t_list = []
+        global gamma_t_list # [[[]]]
+        gamma_t_list = [] # [[]]
+        for t in range(t_total-1):
+            observation = getObsColumnByIndex(obs[t])
+            gamma_t = [0.0 for v in range(n)]
+            di_gamma_t = [[0.0 for c in range(n)] for r in range(n)]
+            for i in range(n):
+                for j in range(n):
+                    di_gamma_t[i][j] = alpha_t_list[t][i] * a[i][j] * observation[j] * beta_t_list[t+1][j]
+                    gamma_t[i] += di_gamma_t[i][j]
+            gamma_t_list.append(gamma_t)
+            di_gamma_t_list.append(di_gamma_t)
+        # special case gamma_T-1(i)
+        gamma_t_list.append(alpha_t_list[t_total-1])
+
+        
+
+        # re etimate the HMMs lambda 
+        reestimatePi()
+        reestimateA()
+        reestimateB()
+
+        # logarithmic probability
+        logProb = 0.0
+        for i in range(t_total):
+            logProb += math.log(cts[i])
+        logProb = -logProb
+
+
+        iterations_done += 1
+        print(a)
+        print()
+        print(b)
+        print()
+        
+        if iterations_done >= max_interations or logProb < oldLogProb:
+            break
+        oldLogProb = logProb
     
-    # logarithmic probability of O
-    logProb = 0.0
-    for i in range(t_total-1):
-        # TODO log of 0 not possible, maybe exchange all zeros in cts with other value
-        logProb =+ math.log(cts[i])
-    logProb = -logProb
+    print(len(gamma_t_list))
+    print(len(di_gamma_t_list))
+    
+    print(a)
+    print()
+    print(b)
+
      
 
 if __name__ == "__main__":
