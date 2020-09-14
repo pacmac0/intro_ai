@@ -76,11 +76,11 @@ def reestimatePi():
 def reestimateA():
     for i in range(n):
         denominator = 0
-        for t in range(t_total-2):
+        for t in range(t_total-1):
             denominator =+ gamma_t_list[t][i]
         for j in range(n):
             numerator = 0
-            for t in range(t_total-2):
+            for t in range(t_total-1):
                 numerator =+ di_gamma_t_list[t][i][j]
             a[i][j] = numerator/denominator
 
@@ -88,11 +88,11 @@ def reestimateA():
 def reestimateB():
     for i in range(n):
         denominator = 0
-        for t in range(t_total-1):
+        for t in range(t_total):
             denominator =+ gamma_t_list[t][i]
         for j in range(m):
             numerator = 0
-            for t in range(t_total-1):
+            for t in range(t_total):
                 if j == obs[t]:
                     numerator =+ gamma_t_list[t][i]
             b[i][j] = numerator / denominator
@@ -123,7 +123,7 @@ def main():
     getMatricesFromStdIn()
     
     # iterating
-    max_interations = 20
+    max_interations = 30
     iterations_done = 0
     oldLogProb = -float('inf')
     
@@ -148,7 +148,7 @@ def main():
         # beta
         global beta_t_list
         beta_t_list = [[cts[-1] for t in range(n)]]
-
+        
         for t in range(t_total-2, -1, -1):
             new_beta_t = [0.0 for x in range(n)]
             observation = getObsColumnByIndex(obs[t+1])
@@ -165,7 +165,7 @@ def main():
         global gamma_t_list # [[[]]]
         gamma_t_list = [] # [[]]
         for t in range(t_total-1):
-            observation = getObsColumnByIndex(obs[t])
+            observation = getObsColumnByIndex(obs[t+1])
             gamma_t = [0.0 for v in range(n)]
             di_gamma_t = [[0.0 for c in range(n)] for r in range(n)]
             for i in range(n):
@@ -175,9 +175,7 @@ def main():
             gamma_t_list.append(gamma_t)
             di_gamma_t_list.append(di_gamma_t)
         # special case gamma_T-1(i)
-        gamma_t_list.append(alpha_t_list[t_total-1])
-
-        
+        gamma_t_list.append(alpha_t_list[-1])
 
         # re etimate the HMMs lambda 
         reestimatePi()
@@ -192,17 +190,11 @@ def main():
 
 
         iterations_done += 1
-        print(a)
-        print()
-        print(b)
-        print()
+        print(iterations_done)
         
         if iterations_done >= max_interations or logProb < oldLogProb:
             break
         oldLogProb = logProb
-    
-    print(len(gamma_t_list))
-    print(len(di_gamma_t_list))
     
     print(a)
     print()
