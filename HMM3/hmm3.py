@@ -123,7 +123,7 @@ def main():
     getMatricesFromStdIn()
     
     # iterating
-    max_interations = 30
+    max_interations = 1
     iterations_done = 0
     oldLogProb = -float('inf')
     
@@ -158,6 +158,8 @@ def main():
                 # scale
                 new_beta_t[i] *= cts[t]
             beta_t_list.append(new_beta_t)
+        
+        beta_t_list.reverse()
         
         # di_gamma and gamma for scalled alpha, beta
         global di_gamma_t_list
@@ -199,7 +201,6 @@ def main():
     print(a)
     print()
     print(b)
-
      
 
 if __name__ == "__main__":
