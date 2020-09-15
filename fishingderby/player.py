@@ -18,21 +18,24 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         global m
         m = N_EMISSIONS
         global a
-        a = [[random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)] for s in range(n)]
-        for row in a:
-            if sum(row) != 1.0:
-                row[-1] = 1 - sum(row[:-1])
 
-        global b
-        b = [[random.uniform((1/m)-epsilon, (1/m)+epsilon) for s in range(m)] for s in range(n)]
-        for row in b:
-            if sum(row) != 1.0:
-                row[-1] = 1 - sum(row[:-1])
-        
-        global pi
-        pi = [random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)]
-        if sum(pi) != 1.0:
-                pi[-1] = 1 - sum(pi[:-1])
+        models = []
+        for spec in range(N_SPECIES):
+            a = [[random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)] for s in range(n)]
+            for row in a:
+                if sum(row) != 1.0:
+                    row[-1] = 1 - sum(row[:-1])
+
+            b = [[random.uniform((1/m)-epsilon, (1/m)+epsilon) for s in range(m)] for s in range(n)]
+            for row in b:
+                if sum(row) != 1.0:
+                    row[-1] = 1 - sum(row[:-1])
+            
+            pi = [random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)]
+            if sum(pi) != 1.0:
+                    pi[-1] = 1 - sum(pi[:-1])
+
+            models.append([a,b,pi])
         
         pass
 
@@ -158,15 +161,21 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         global t_total
         t_total = step
 
-        global obs
-        obs =
+        #global obs
+        #obs = 
+        #baumWelch(obs)
+
+        """
+        build 7 models, one per speciese with their own matrices
+        a model represents a speciese, each species has other probabilities in B observations(to move)
+        """
 
         
 
         # This code would make a random guess on each step:
         #return (step % N_FISH, random.randint(0, N_SPECIES - 1))
 
-        return None #(fish_id, guess)
+        return None #(0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
 
     def reveal(self, correct, fish_id, true_type):
         """
