@@ -51,6 +51,14 @@ def getMatricesFromStdIn():
         else:
             pass
 
+def getObservationsFromFile():
+    for line in sys.stdin:
+        line = line.replace('\n','')
+        args = [int(val) for val in line.strip().split(" ")]
+        arg_count = args[0]
+        global obs
+        obs = args[1:]
+    
 # re-estimate pi
 def reestimatePi():
     pi = gamma_t_list[0]
@@ -81,29 +89,26 @@ def reestimateB():
             b[i][j] = numerator / denominator
 
 def main():
-    """
+    
     global a
-    a = [[0.6, 0.1, 0.1, 0.2], 
-         [0.0, 0.3, 0.2, 0.5], 
-         [0.8, 0.1, 0.0, 0.1],
-         [0.2, 0.0, 0.1, 0.7]]
+    a = [[0.54, 0.26, 0.20], 
+         [0.19, 0.53, 0.28], 
+         [0.22, 0.18, 0.6]]
     global b
-    b= [[0.6, 0.2, 0.1, 0.1],
-        [0.1, 0.4, 0.1, 0.4],
-        [0.0, 0.0, 0.7, 0.3],
-        [0.0, 0.0, 0.1, 0.9]]
+    b= [[0.50, 0.20, 0.11, 0.19],
+        [0.22, 0.28, 0.23, 0.27],
+        [0.19, 0.21, 0.15, 0.45]]
     global pi
-    pi = [0.5, 0.0, 0.0, 0.5]
-    global obs
-    obs = [3, 0, 0, 2]
+    pi = [0.3, 0.2, 0.5]
     global n
-    n = 4
+    n = 3
     global m
     m = 4
     global t_total
     t_total = 4
-    """
-    getMatricesFromStdIn()
+    getObservationsFromFile()
+    
+    #getMatricesFromStdIn()
     
     # iterating
     max_interations = 30
