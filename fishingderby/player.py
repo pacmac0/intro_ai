@@ -10,17 +10,28 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         In this function you should initialize the parameters you will need,
         such as the initialization of models, or fishes, among others.
         """
-        # HMM init
-        """
-        a = 
+        # HMM init at the moment N = M
+        epsilon = 0.05
+        n = N_EMISSIONS
+        m = N_EMISSIONS
+        global a
+        a = [[random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)] for s in range(n)]
+        for row in a:
+            if sum(row) != 1.0:
+                row[-1] = 1 - sum(row[:-1])
 
-        b = 
-
-        p = 
-        """
-
-
-
+        
+        global b
+        b = [[random.uniform((1/m)-epsilon, (1/m)+epsilon) for s in range(m)] for s in range(n)]
+        for row in b:
+            if sum(row) != 1.0:
+                row[-1] = 1 - sum(row[:-1])
+        
+        global pi
+        pi = [random.uniform((1/n)-epsilon, (1/n)+epsilon) for s in range(n)]
+        if sum(pi) != 1.0:
+                pi[-1] = 1 - sum(pi[:-1])
+        
         pass
 
     def guess(self, step, observations):
@@ -32,21 +43,12 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param observations: a list of N_FISH observations, encoded as integers
         :return: None or a tuple (fish_id, fish_type)
         """
-
-        """
-        # observation sequences per fish
-        obs = [[] for fish in range(N_FISH)]
-        for fish_idx, move in enumerate(observations):
-            obs[fish_idx].append(move)
-
-        if (step % 10) == 0:
-            print('We observed ' + str(len(obs[0])) + ' moves made by ' + str(len(obs)) + ' fish')
-        """
+        
 
         # This code would make a random guess on each step:
-        return (step % N_FISH, random.randint(0, N_SPECIES - 1))
+        #return (step % N_FISH, random.randint(0, N_SPECIES - 1))
 
-        return None
+        return None #(fish_id, guess)
 
     def reveal(self, correct, fish_id, true_type):
         """

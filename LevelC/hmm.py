@@ -55,7 +55,8 @@ def getObservationsFromFile():
     for line in sys.stdin:
         line = line.replace('\n','')
         args = [int(val) for val in line.strip().split(" ")]
-        arg_count = args[0]
+        global t_total
+        t_total = args[0]
         global obs
         obs = args[1:]
     
@@ -104,14 +105,12 @@ def main():
     n = 3
     global m
     m = 4
-    global t_total
-    t_total = 4
     getObservationsFromFile()
     
     #getMatricesFromStdIn()
     
     # iterating
-    max_interations = 30
+    max_interations = 500
     iterations_done = 0
     oldLogProb = -float('inf')
     
@@ -188,7 +187,7 @@ def main():
         if iterations_done >= max_interations or logProb < oldLogProb:
             break
         oldLogProb = logProb
-    
+    # end while
     str_out_a = str(len(a)) + ' ' +  str(len(a[0])) + ' '
     for row in a:
         for val in row:
@@ -202,6 +201,7 @@ def main():
             str_out_b = str_out_b + str(round(val, 6)) + ' '
     str_out_b = str_out_b.strip()
     print(str_out_b)
+    #print('The training converged after {} iterations.'.format(iterations_done))
 
 
 if __name__ == "__main__":
