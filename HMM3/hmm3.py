@@ -60,7 +60,7 @@ def matrixMultiply(mat1, mat2): # returns [[]]
         for col2_idx in range(len(mat2[0])):
             for val_idx in range(len(row)):
                 res_mat[row1_idx][col2_idx] += row[val_idx] * mat2[val_idx][col2_idx]
-                res_mat[row1_idx][col2_idx] = float("{:.20f}".format(res_mat[row1_idx][col2_idx])) # rounding to two digits
+                res_mat[row1_idx][col2_idx] = float("{:.16f}".format(res_mat[row1_idx][col2_idx])) # rounding to two digits
     return res_mat
 
 def getObsColumnByIndex(idx): # returns []
@@ -76,25 +76,25 @@ def reestimatePi():
 def reestimateA():
     for i in range(n):
         denominator = 0
-        for t in range(t_total-2):
-            denominator =+ gamma_t_list[t][i]
+        for t in range(t_total-1):
+            denominator += gamma_t_list[t][i]
         for j in range(n):
             numerator = 0
-            for t in range(t_total-2):
-                numerator =+ di_gamma_t_list[t][i][j]
+            for t in range(t_total-1):
+                numerator += di_gamma_t_list[t][i][j]
             a[i][j] = numerator/denominator
 
 # re-estimate B
 def reestimateB():
     for i in range(n):
         denominator = 0
-        for t in range(t_total-1):
-            denominator =+ gamma_t_list[t][i]
+        for t in range(t_total):
+            denominator += gamma_t_list[t][i]
         for j in range(m):
             numerator = 0
-            for t in range(t_total-1):
+            for t in range(t_total):
                 if j == obs[t]:
-                    numerator =+ gamma_t_list[t][i]
+                    numerator += gamma_t_list[t][i]
             b[i][j] = numerator / denominator
 
 def main():
@@ -123,41 +123,49 @@ def main():
     getMatricesFromStdIn()
     
     # iterating
-    max_interations = 20
+    max_interations = 30
     iterations_done = 0
     oldLogProb = -float('inf')
     
     while True:
-
-        # init alpha and beta (scaled)
-        alpha_t = elemVectorMult(pi, getObsColumnByIndex(obs[0]))
-        # scaling
+        
         global cts
         cts = [0.0 for t in range(t_total)]
-        cts[0] = 1/sum(alpha_t)
-        alpha_t = [alpha_t_item * cts[0] for alpha_t_item in alpha_t]
-        
-        global alpha_t_list
-        alpha_t_list = [alpha_t]
+        c0 = 0.0
+        # init alpha0
+        alpha_t_list = []
+        alpha_0 = [0.0 for s in range(n)]
+        for i in range(n):
+            alpha_0[i] = pi[i] * [row[obs[0]] for row in b][i]
+            c0 += alpha_0[i]
+        # scale
+        cts[0] = 1/c0
+        alpha_0 = [p * cts[0] for p in alpha_0]
+        alpha_t_list.append(alpha_0)
+
+        # get alpha_t's
         for t in range(1, t_total):
-            alpha_t = elemVectorMult(matrixMultiply([alpha_t], a)[0], getObsColumnByIndex(obs[t]))
-            cts[t] = 1/sum(alpha_t)
-            alpha_t = [alpha_ti * cts[t] for alpha_ti in alpha_t]
-            alpha_t_list.append(alpha_t)
-
-        # beta
-        global beta_t_list
-        beta_t_list = [[cts[-1] for t in range(n)]]
-
-        for t in range(t_total-2, -1, -1):
-            new_beta_t = [0.0 for x in range(n)]
-            observation = getObsColumnByIndex(obs[t+1])
+            new_alpha_t = [0.0 for s in range(n)]
             for i in range(n):
                 for j in range(n):
-                    new_beta_t[i] += a[i][j] * observation[j] * beta_t_list[-1][j]
+                    new_alpha_t[i] += alpha_t_list[-1][j] * a[j][i]
+                new_alpha_t[i] *= [row[obs[t]] for row in b][i]
+            cts[t] = 1/sum(new_alpha_t)
+            # scaleing
+            new_alpha_t = [p * cts[t] for p in new_alpha_t]
+            alpha_t_list.append(new_alpha_t)
+        
+        # beta
+        global beta_t_list
+        beta_t_list = [[0.0 for v in range(n)] for t in range(t_total)]
+        beta_t_list[t_total-1] = [cts[-1] for v in range(n)]
+        
+        for t in range(t_total-2, -1, -1):
+            for i in range(n):
+                for j in range(n):
+                    beta_t_list[t][i] += a[i][j] *  [row[obs[t+1]] for row in b][j] * beta_t_list[t+1][j]
                 # scale
-                new_beta_t[i] *= cts[t]
-            beta_t_list.append(new_beta_t)
+                beta_t_list[t][i] *= cts[t]
         
         # di_gamma and gamma for scalled alpha, beta
         global di_gamma_t_list
@@ -165,19 +173,16 @@ def main():
         global gamma_t_list # [[[]]]
         gamma_t_list = [] # [[]]
         for t in range(t_total-1):
-            observation = getObsColumnByIndex(obs[t])
             gamma_t = [0.0 for v in range(n)]
             di_gamma_t = [[0.0 for c in range(n)] for r in range(n)]
             for i in range(n):
                 for j in range(n):
-                    di_gamma_t[i][j] = alpha_t_list[t][i] * a[i][j] * observation[j] * beta_t_list[t+1][j]
+                    di_gamma_t[i][j] = alpha_t_list[t][i] * a[i][j] * [row[obs[t+1]] for row in b][j] * beta_t_list[t+1][j]
                     gamma_t[i] += di_gamma_t[i][j]
             gamma_t_list.append(gamma_t)
             di_gamma_t_list.append(di_gamma_t)
         # special case gamma_T-1(i)
-        gamma_t_list.append(alpha_t_list[t_total-1])
-
-        
+        gamma_t_list.append(alpha_t_list[-1])
 
         # re etimate the HMMs lambda 
         reestimatePi()
@@ -192,24 +197,24 @@ def main():
 
 
         iterations_done += 1
-        print(a)
-        print()
-        print(b)
-        print()
-        
         if iterations_done >= max_interations or logProb < oldLogProb:
             break
         oldLogProb = logProb
     
-    print(len(gamma_t_list))
-    print(len(di_gamma_t_list))
-    
-    print(a)
-    print()
-    print(b)
+    str_out_a = str(len(a)) + ' ' +  str(len(a[0])) + ' '
+    for row in a:
+        for val in row:
+            str_out_a = str_out_a + str(round(val, 6)) + ' '
+    str_out_a = str_out_a.strip()
+    print(str_out_a)
 
-     
+    str_out_b = str(len(b)) + ' ' +  str(len(b[0])) + ' '
+    for row in b:
+        for val in row:
+            str_out_b = str_out_b + str(round(val, 6)) + ' '
+    str_out_b = str_out_b.strip()
+    print(str_out_b)
+
 
 if __name__ == "__main__":
     main()
-
