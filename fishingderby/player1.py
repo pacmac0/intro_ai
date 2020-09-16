@@ -13,54 +13,35 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         such as the initialization of models, or fishes, among others.
         """
         # HMM init at the moment N = M
-        global guesses
-        guesses = 0
+        epsilon = 0.05
         global n
         n = 14
         global m
         m = N_EMISSIONS
-        global obs_sequences
-        obs_sequences = [[] for _ in range(N_FISH)]
+        # global a
         global known_fish
-        known_fish = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[]} # fish_type: fish_id
+        known_fish = {}  # to store fish_id : fish_type
+
         global models
         models = []
-        for species in range(N_SPECIES):
-            models.append(self.initABPi())
-        #     a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
-        #     for row in a:
-        #         if sum(row) != 1.0:
-        #             row[-1] = 1 - sum(row[:-1])
-        #
-        #     b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
-        #     for row in b:
-        #         if sum(row) != 1.0:
-        #             row[-1] = 1 - sum(row[:-1])
-        #
-        #     pi = [random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)]
-        #     if sum(pi) != 1.0:
-        #         pi[-1] = 1 - sum(pi[:-1])
-        #
-        #     models.append([a, b, pi])
+        for spec in range(N_SPECIES):
+            a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
+            for row in a:
+                if sum(row) != 1.0:
+                    row[-1] = 1 - sum(row[:-1])
+
+            b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
+            for row in b:
+                if sum(row) != 1.0:
+                    row[-1] = 1 - sum(row[:-1])
+
+            pi = [random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)]
+            if sum(pi) != 1.0:
+                pi[-1] = 1 - sum(pi[:-1])
+
+            models.append([a, b, pi])
 
         pass
-
-    def initABPi(self):
-        epsilon = 0.001
-        a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
-        for row in a:
-            if sum(row) != 1.0:
-                row[-1] = 1 - sum(row[:-1])
-
-        b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
-        for row in b:
-            if sum(row) != 1.0:
-                row[-1] = 1 - sum(row[:-1])
-
-        pi = [random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)]
-        if sum(pi) != 1.0:
-            pi[-1] = 1 - sum(pi[:-1])
-        return [a, b, pi]
 
     # re-estimate pi
     def reestimatePi(self, gamma_t_list):
@@ -69,7 +50,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
 
     # re-estimate A
     def reestimateA(self, a, di_gamma_t_list, gamma_t_list):
-        # eps = 1e-5
         for i in range(n):
             denominator = 0
             for t in range(t_total - 1):
@@ -84,7 +64,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         # re-estimate B
 
     def reestimateB(self, b, obs, gamma_t_list):
-        # eps = 1e-5
         for i in range(n):
             denominator = 0
             for t in range(t_total):
@@ -99,7 +78,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
 
     def baumWelch(self, obs, model):
         # iterating
-        # eps = 1e-5
         max_interations = 10
         iterations_done = 0
         oldLogProb = -float('inf')
@@ -163,7 +141,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
             # special case gamma_T-1(i)
             gamma_t_list.append(alpha_t_list[-1])
 
-            # re etimate the HMMs lambda 
+            # re etimate the HMMs lambda
             pi = self.reestimatePi(gamma_t_list)
             a = self.reestimateA(a, di_gamma_t_list, gamma_t_list)
             b = self.reestimateB(b, obs, gamma_t_list)
@@ -171,10 +149,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
             # logarithmic probability
             logProb = 0.0
             for i in range(t_total):
-                try:
-                    logProb += math.log(cts[i])
-                except:
-                    print(cts[i])
+                logProb += math.log(cts[i])
             logProb = -logProb
 
             iterations_done += 1
@@ -182,26 +157,22 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                 break
             oldLogProb = logProb
 
-            # print('a sum =', [sum(row) for row in a])
-            # print('b sum =', [sum(row) for row in b])
-            # print('pi sum =', sum(pi))
-
         return [a, b, pi]
 
     def alphaPass(self, model, obs):
         a, b, pi = model
 
-        # cts = [0.0 for _ in range(t_total)]
-        # c0 = 0.0
+        cts = [0.0 for _ in range(t_total)]
+        c0 = 0.0
         # init alpha0
         alpha_t_list = []
         alpha_0 = [0.0 for _ in range(n)]
         for i in range(n):
             alpha_0[i] = pi[i] * [row[obs[0]] for row in b][i]
-            # c0 += alpha_0[i]
+            c0 += alpha_0[i]
         # scale
-        # cts[0] = 1 / c0
-        # alpha_0 = [p * cts[0] for p in alpha_0]
+        cts[0] = 1 / c0
+        alpha_0 = [p * cts[0] for p in alpha_0]
         alpha_t_list.append(alpha_0)
 
         # get alpha_t's
@@ -211,9 +182,9 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                 for j in range(n):
                     new_alpha_t[i] += alpha_t_list[-1][j] * a[j][i]
                 new_alpha_t[i] *= [row[obs[t]] for row in b][i]
-            # cts[t] = 1 / sum(new_alpha_t)
+            cts[t] = 1 / sum(new_alpha_t)
             # scaleing
-            # new_alpha_t = [p * cts[t] for p in new_alpha_t]
+            new_alpha_t = [p * cts[t] for p in new_alpha_t]
             alpha_t_list.append(new_alpha_t)
         return sum(alpha_t_list[-1])
 
@@ -226,44 +197,33 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param observations: a list of N_FISH observations, encoded as integers
         :return: None or a tuple (fish_id, fish_type)
         """
-        # provideT_total for baum welch
+
+        wait_time = 110
+
         global t_total
         t_total = step
-        # keep all observations
-        global obs_sequences
-        for fish, move in enumerate(observations):
-            obs_sequences[fish].append(move)
-        # build barier to accumulate observations to train on
-        if step < 100:
-            return None
 
-        # guess based on trained models
-        probabilities = []
-        for i in range(len(obs_sequences)):
-            if i in sum(list(known_fish.values()), []):
-                probabilities.append([-100 for _ in models])
-            else:
-                obs = obs_sequences[i]
-                probabilities.append([self.alphaPass(model, obs) for model in models])
-
-        max_probabilities = [max(probs) for probs in probabilities]
-        guess_fish = max_probabilities.index(max(max_probabilities))
-        guess_type = (probabilities[guess_fish]).index(max(probabilities[guess_fish]))
+        global observation_seq
+        observation_seq = observations
+        # global obs
+        # obs =
+        # baumWelch(obs)
 
         """
         build 7 models, one per speciese with their own matrices
         a model represents a speciese, each species has other probabilities in B observations(to move)
         """
 
+        probabilities = []
+        for model in models:
+            probabilities.append(self.alphaPass(model, obs))
+
+        guess_type = probabilities.index(max(probabilities))
+
         # This code would make a random guess on each step:
         # return (step % N_FISH, random.randint(0, N_SPECIES - 1))
 
-        # return None  # (0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
-        # print(guess_fish, guess_type)
-        global guesses
-        guesses += 1
-        print(guesses)
-        return guess_fish, guess_type
+        return None  # (0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
 
     def reveal(self, correct, fish_id, true_type):
         """
@@ -275,26 +235,10 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param true_type: the correct type of the fish
         :return:
         """
+        known_fish[fish_id] = true_type
 
-        known_fish[true_type].append(fish_id)
-        # print(known_fish)
-
-        for type_ in known_fish.keys():
-            id_ = known_fish[type_]
-            if not id_:
-                continue
-            obs = sum([obs_sequences[i] for i in id_], [])
-            models[type_] = self.baumWelch(obs, self.initABPi())
-            # print('a sum =', [sum(row) for row in models[type_][0]])
-            # print('b sum =', [sum(row) for row in models[type_][1]])
-            # print('pi sum =', sum(models[type_][2]))
-
-        """
-        # train models
-        global models
-        for model in models:
-            self.baumWelch(obs, model) # change obs
-        """
-
+        for id_ in known_fish.keys():
+            type_ = known_fish[id_]
+            models[type_] = self.baumWelch(observation_seq[id_], models[type_])
 
         pass
