@@ -18,13 +18,13 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         n = 14
         global m
         m = 8  # N_EMISSIONS
-        # global a
+        global obs_sequences
+        obs_sequences = [[] for fish in range(N_FISH)]
         global known_fish
         known_fish = {} # to store fish_id : fish_type
-        N_SPECIES = 7
         global models
         models = []
-        for spec in range(N_SPECIES):
+        for species in range(N_SPECIES):
             a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
             for row in a:
                 if sum(row) != 1.0:
@@ -168,16 +168,18 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param observations: a list of N_FISH observations, encoded as integers
         :return: None or a tuple (fish_id, fish_type)
         """
-
-        # wait_time = 110
+        # provideT_total for baum welch
         global t_total
         t_total = step
-
-        global observation_seq
-        observation_seq = observations
-        # global obs
-        # obs =
-        # baumWelch(obs)
+        # keep all observations
+        global obs_sequences
+        for fish, move in enumerate(observations):
+            obs_sequences[fish].append(move)
+        # build barier to accumulate observations to train on
+        if step <= 80:
+            return None
+        # guess bassed on trasined models
+        
 
         """
         build 7 models, one per speciese with their own matrices
@@ -185,7 +187,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         """
 
         # This code would make a random guess on each step:
-        # return (step % N_FISH, random.randint(0, N_SPECIES - 1))
+        return (step % N_FISH, random.randint(0, N_SPECIES - 1))
 
         return None  # (0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
 
@@ -199,10 +201,15 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param true_type: the correct type of the fish
         :return:
         """
-        known_fish[fish_id] = true_type
 
-        for id in known_fish.keys():
-            type = known_fish[id]
-            models[type] = self.baumWelch(observation_seq[id], models[type])
+
+
+        """
+        # train models
+        global models
+        for model in models:
+            self.baumWelch(obs, model) # change obs
+        """
+
 
         pass
