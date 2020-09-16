@@ -13,8 +13,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         such as the initialization of models, or fishes, among others.
         """
         # HMM init at the moment N = M
-        global guesses
-        guesses = 0
         global n
         n = 14
         global m
@@ -23,6 +21,8 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         obs_sequences = [[] for _ in range(N_FISH)]
         global known_fish
         known_fish = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[]} # fish_type: fish_id
+        global last_train
+        last_train = [-1] * 7
         global models
         models = []
         for species in range(N_SPECIES):
@@ -46,7 +46,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         pass
 
     def initABPi(self):
-        epsilon = 0.001
+        epsilon = 0.0001
         a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
         for row in a:
             if sum(row) != 1.0:
@@ -234,8 +234,10 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         for fish, move in enumerate(observations):
             obs_sequences[fish].append(move)
         # build barier to accumulate observations to train on
-        if step < 100:
+        if step < 110:
             return None
+        # if step == 110:
+        #     return random.randint(0, 69), random.randint(0, 6)
 
         # guess based on trained models
         probabilities = []
@@ -260,9 +262,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
 
         # return None  # (0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
         # print(guess_fish, guess_type)
-        global guesses
-        guesses += 1
-        print(guesses)
         return guess_fish, guess_type
 
     def reveal(self, correct, fish_id, true_type):
@@ -278,13 +277,23 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
 
         known_fish[true_type].append(fish_id)
         # print(known_fish)
+        models[true_type] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[true_type]], []), self.initABPi())
+        # global last_train
+        # last_train[true_type] = t_total
+        # # print(last_train)
+        # type_guessed_before = [g for g in last_train if 0 < g < max(last_train)]
+        # if type_guessed_before:
+        #     oldest_model = last_train.index(min(type_guessed_before))
+        #     models[oldest_model] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[oldest_model]], []),self.initABPi())
+        #     last_train[oldest_model] = t_total
 
-        for type_ in known_fish.keys():
-            id_ = known_fish[type_]
-            if not id_:
-                continue
-            obs = sum([obs_sequences[i] for i in id_], [])
-            models[type_] = self.baumWelch(obs, self.initABPi())
+
+
+        # for type_ in known_fish.keys():
+        #     id_ = known_fish[type_]
+        #     if not id_:
+        #         continue
+        #     models[type_] = self.baumWelch(sum([obs_sequences[i] for i in id_], []), self.initABPi())
             # print('a sum =', [sum(row) for row in models[type_][0]])
             # print('b sum =', [sum(row) for row in models[type_][1]])
             # print('pi sum =', sum(models[type_][2]))
