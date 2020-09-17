@@ -15,7 +15,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         # HMM
         epsilon = 0.05
         global n
-        n = N_SPECIES
+        n = 14 # guessed as 2*N_SPECIES
         global m
         m = 8  # N_EMISSIONS
         global obs_sequences
@@ -209,10 +209,15 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         for fish, move in enumerate(observations):
             obs_sequences[fish].append(move)
         # build barier to accumulate observations to train on
-        if step <= 110 or len(guessed_fish) >= N_FISH: # no more guesses when all fish are guessed
+        if step <= 60:
             return None
         # guess bassed on trained models, by using alpha pass and choosing the max probabil for the sequence
 
+        # get observation sequence for unguessed fish 
+        global guessed_fish
+        if len(guessed_fish) >= N_FISH: # no more guesses when all fish are guessed
+            print('All fish tried!!!')
+            return None
         # choose random from list of fish/sequences that are not guessed yet
         fish_to_guess = [i for i in range(N_FISH) if i not in guessed_fish]
         next_guess_fish = random.choice(fish_to_guess)
@@ -229,7 +234,6 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         guess_species = [i for i, prob in enumerate(probabilities) if prob == max(probabilities)][0]
         # keep track of already guessed fish/ sequences to choose from the others for next guess
         guessed_fish.append(next_guess_fish)
-        #print('Guesses made: {}'.format(len(guessed_fish)))
         return (next_guess_fish, guess_species)
 
     def reveal(self, correct, fish_id, true_type):
@@ -243,7 +247,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :return:
         """
         # starts getting called after barrier passed
-
+        
         # create fish to observation-sequence mapping
         global species_sequence_mapping
         species_sequence_mapping[true_type].append(fish_id) # fish_id is at the same time index of sequence in observations
@@ -256,9 +260,5 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         t_total = len(train_sequence)
         # print('train_sequence: {}'.format(train_sequence))
         # retrain model of fish with new information
-         
-        baum_welch_iterations = 1
-        if len(species_sequence_mapping[true_type]) < 1: # adjust training effored over time
-            baum_welch_iterations = 50
-        models[true_type] = self.baumWelch(train_sequence, models[true_type], baum_welch_iterations)
+        models[true_type] = self.baumWelch(train_sequence, models[true_type], 5)
         pass
