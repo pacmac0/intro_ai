@@ -14,13 +14,14 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         """
         # HMM init at the moment N = M
         global n
-        n = 14
+        n = 16
         global m
         m = N_EMISSIONS
         global obs_sequences
         obs_sequences = [[] for _ in range(N_FISH)]
         global known_fish
-        known_fish = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[]} # fish_type: fish_id
+        known_fish = [[] for _ in range(N_SPECIES)]
+        # known_fish = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[]} # fish_type: fish_id
         global last_train
         last_train = [-1] * 7
         global models
@@ -30,7 +31,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         pass
 
     def initABPi(self):
-        epsilon = 0.001
+        epsilon = 0.0001
         a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
         for row in a:
             if sum(row) != 1.0:
@@ -91,11 +92,11 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         while True:
 
             # global cts
-            cts = [0.0 for _ in range(t_total)]
+            cts = [0.0 for t in range(t_total)]
             c0 = 0.0
             # init alpha0
             alpha_t_list = []
-            alpha_0 = [0.0 for _ in range(n)]
+            alpha_0 = [0.0 for s in range(n)]
             for i in range(n):
                 alpha_0[i] = pi[i] * [row[obs[0]] for row in b][i]
                 c0 += alpha_0[i]
@@ -217,20 +218,23 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         for fish, move in enumerate(observations):
             obs_sequences[fish].append(move)
         # build barier to accumulate observations to train on
-        if step < 39:
+        if step < 40:
             return None
 
         # guess based on trained models
         probabilities = []
         for i in range(len(obs_sequences)):
-            if i in sum(list(known_fish.values()), []):
+            if i in sum(known_fish, []):
                 probabilities.append([-100 for _ in models])
             else:
                 obs = obs_sequences[i]
                 probabilities.append([self.alphaPass(model, obs) for model in models])
 
         max_probabilities = [max(probs) for probs in probabilities]
-        guess_fish = max_probabilities.index(max(max_probabilities))
+        if t_total < step + 7:
+            guess_fish = random.choice([f for f in list(range(70)) if f not in sum(known_fish, [])])
+        else:
+            guess_fish = max_probabilities.index(max(max_probabilities))
         guess_type = (probabilities[guess_fish]).index(max(probabilities[guess_fish]))
 
         # global guesses
@@ -262,18 +266,25 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         known_fish[true_type].append(fish_id)
         # print(known_fish)
         models[true_type] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[true_type]], []), self.initABPi())
+
         global last_train
         last_train[true_type] = t_total
-        # print(last_train)
-        t_guessed_before = [g for g in last_train if 0 < g < max(last_train)]
 
-        if t_guessed_before:
+        if t_total < 40:
+            n_retrain = 5
+        elif t_total < 60:
+            n_retrain = 3
+        elif t_total < 150:
             n_retrain = 2
-            if len(t_guessed_before) < n_retrain:
-                for type_ in [last_train.index(t) for t in t_guessed_before]:
-                    models[type_] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[type_]], []),self.initABPi())
-            else:
-                for type_ in [last_train.index(t) for t in sorted(t_guessed_before)[:n_retrain]]:
-                    models[type_] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[type_]], []),self.initABPi())
+        else:
+            n_retrain = 1
+        t_guessed_before = [g for g in last_train if 0 < g < max(last_train)]
+        # print(last_train)
+        # print([last_train.index(t) for t in sorted(t_guessed_before)[:min(n_retrain, len(t_guessed_before))]])
+        if t_guessed_before:
+            for type_ in [last_train.index(t) for t in sorted(t_guessed_before)[:min(n_retrain, len(t_guessed_before))]]:
+                models[type_] = self.baumWelch(sum([obs_sequences[i] for i in known_fish[type_]], []),self.initABPi())
+                last_train[type_] = t_total + random.uniform(0, 0.5)
 
+        # print(last_train)
         pass
