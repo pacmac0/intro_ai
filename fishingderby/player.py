@@ -12,18 +12,20 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         In this function you should initialize the parameters you will need,
         such as the initialization of models, or fishes, among others.
         """
-        # HMM init at the moment N = M
+        # HMM
         epsilon = 0.05
         global n
-        n = 14
+        n = 14 # guessed as 2*N_SPECIES
         global m
         m = 8  # N_EMISSIONS
         global obs_sequences
         obs_sequences = [[] for fish in range(N_FISH)]
-        global known_fish
-        known_fish = {} # to store fish_id : fish_type
+        global species_sequence_mapping
+        species_sequence_mapping = [[] for fish_type in range(N_SPECIES)]
         global models
         models = []
+        global guessed_fish
+        guessed_fish = []
         for species in range(N_SPECIES):
             a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
             for row in a:
@@ -58,11 +60,13 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                 numerator = 0
                 for t in range(t_total - 1):
                     numerator += di_gamma_t_list[t][i][j]
+                # catch division by zero error
+                if denominator == 0.0:
+                    denominator = 0.00001
                 a[i][j] = numerator / denominator
         return a
 
-        # re-estimate B
-
+    # re-estimate B
     def reestimateB(self, b, obs, gamma_t_list):
         for i in range(n):
             denominator = 0
@@ -73,12 +77,15 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                 for t in range(t_total):
                     if j == obs[t]:
                         numerator += gamma_t_list[t][i]
+                # catch division by zero error
+                if denominator == 0.0:
+                    denominator = 0.00001
                 b[i][j] = numerator / denominator
         return b
 
     def baumWelch(self, obs, model):
         # iterating
-        max_interations = 10
+        max_interations = 1
         iterations_done = 0
         oldLogProb = -float('inf')
         a, b, pi = model
@@ -95,6 +102,9 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                 alpha_0[i] = pi[i] * [row[obs[0]] for row in b][i]
                 c0 += alpha_0[i]
             # scale
+            # take care of division by zero error 
+            if c0 == 0.0:
+                c0 = 0.00001
             cts[0] = 1 / c0
             alpha_0 = [p * cts[0] for p in alpha_0]
             alpha_t_list.append(alpha_0)
@@ -106,7 +116,11 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
                     for j in range(n):
                         new_alpha_t[i] += alpha_t_list[-1][j] * a[j][i]
                     new_alpha_t[i] *= [row[obs[t]] for row in b][i]
-                cts[t] = 1 / sum(new_alpha_t)
+                ct = sum(new_alpha_t)
+                # take care of division by zero error 
+                if ct == 0.0:
+                    ct = 0.00001
+                cts[t] = 1 / ct
                 # scaling
                 new_alpha_t = [p * cts[t] for p in new_alpha_t]
                 alpha_t_list.append(new_alpha_t)
@@ -149,6 +163,9 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
             # logarithmic probability
             logProb = 0.0
             for i in range(t_total):
+                # prevent log(0) error
+                if cts[i] == 0.0:
+                    cts[i] = 0.0001
                 logProb += math.log(cts[i])
             logProb = -logProb
 
@@ -168,7 +185,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param observations: a list of N_FISH observations, encoded as integers
         :return: None or a tuple (fish_id, fish_type)
         """
-        # provideT_total for baum welch
+        # provide t_total for baum welch
         global t_total
         t_total = step
         # keep all observations
@@ -178,18 +195,55 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         # build barier to accumulate observations to train on
         if step <= 80:
             return None
-        # guess bassed on trasined models
-        
+        # guess bassed on trained models, by using alpha pass and choosing the max probabil for the sequence
 
-        """
-        build 7 models, one per speciese with their own matrices
-        a model represents a speciese, each species has other probabilities in B observations(to move)
-        """
+        # get observation sequence for unguessed fish 
+        global guessed_fish
+        # choose random from list of fish/sequences that are not guessed yet
+        unguessed = random.choice([i for i in range(N_FISH) if i not in guessed_fish])
+        obs = obs_sequences[unguessed]
 
+        # get probability of observation for each model by using alpha-pass
+        for model in models:
+            cts = [0.0 for t in range(t_total)]
+            c0 = 0.0
+            # init alpha0
+            alpha_t_list = []
+            alpha_0 = [0.0 for s in range(n)]
+            for i in range(n):
+                alpha_0[i] = model[2][i] * [row[obs[0]] for row in model[1]][i]
+                c0 += alpha_0[i]
+            # scale
+            # take care of division by zero error 
+                if c0 == 0.0:
+                    c0 = 0.00001
+            cts[0] = 1/c0
+            alpha_0 = [p * cts[0] for p in alpha_0]
+            alpha_t_list.append(alpha_0)
+
+            # get alpha_t's
+            for t in range(1, t_total):
+                new_alpha_t = [0.0 for s in range(n)]
+                for i in range(n):
+                    for j in range(n):
+                        new_alpha_t[i] += alpha_t_list[-1][j] * model[0][j][i]
+                    new_alpha_t[i] *= [row[obs[t]] for row in model[1]][i]
+                ct = sum(new_alpha_t)
+                # take care of division by zero error 
+                if ct == 0.0:
+                    ct = 0.00001
+                cts[t] = 1/ct
+                # scaleing
+                new_alpha_t = [p * cts[t] for p in new_alpha_t]
+                alpha_t_list.append(new_alpha_t)
+
+
+
+        guess = step % N_FISH # argmax of mdels probabilities 
+        # keep track of already guessed fish/ sequences to choose from the others for next guess
+        guessed_fish.append(step % N_FISH)
         # This code would make a random guess on each step:
-        return (step % N_FISH, random.randint(0, N_SPECIES - 1))
-
-        return None  # (0,4), (1,6), (2,4), (3,0), (4,5), (5,0), (6,4), (7,0), (8,3) <= (fish_id, guess)
+        return (guess, random.randint(0, N_SPECIES - 1))
 
     def reveal(self, correct, fish_id, true_type):
         """
@@ -201,15 +255,26 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         :param true_type: the correct type of the fish
         :return:
         """
-
-
+        # starts getting called after barrier passed
+        
+        # create fish to observation-sequence mapping
+        global species_sequence_mapping
+        species_sequence_mapping[true_type].append(fish_id) # fish_id is at the same time index of sequence in observations
+        # retrain model of fish with new information
+        models[true_type] = self.baumWelch(obs_sequences[fish_id], models[true_type])
 
         """
-        # train models
+        # train each "species"-model for all the assosiated sequences 
         global models
-        for model in models:
-            self.baumWelch(obs, model) # change obs
+        for species, species_sequences in enumerate(species_sequence_mapping):
+            for sequnce_idx_of_spec in species_sequences:
+                models[species] = self.baumWelch(obs_sequences[sequnce_idx_of_spec], models[species])
         """
-
-
+        
+        """
+        print(true_type)
+        print('SUM of pi: ' + str(sum(models[0][2])))
+        print('SUM of a: ' + str(sum(models[0][0][0])))
+        print('SUM of b: ' + str(sum(models[0][1][0])))
+        """
         pass
