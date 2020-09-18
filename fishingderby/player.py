@@ -68,7 +68,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
 
     def baumWelch(self, obs, model):
         # iterating
-        max_interations = 10
+        max_interations = 1
         iterations_done = 0
         oldLogProb = -float('inf')
         a, b, pi = model
@@ -196,11 +196,11 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         for fish, move in enumerate(observations):
             obs_sequences[fish].append(move)
         # build barier to accumulate observations to train on
-        if step < 40:
+        if step < 110:
             return None
 
         # guess based on trained models
-        if step < 45:
+        if step < 115:
             # randomly pick fish to guess
             guess_fish = random.choice([f for f in list(range(70)) if f not in sum(known_fish, [])])
             probabilities = [self.alphaPass(model, obs_sequences[guess_fish]) for model in models]
@@ -245,11 +245,11 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         t_guessed_before = [g for g in last_train if 0 < g < max(last_train)]
 
         if t_total < 60:
-            n_retrain = 3
+            n_retrain = 5
         elif t_total < 150:
-            n_retrain = 2
+            n_retrain = 3
         else:
-            n_retrain = 1
+            n_retrain = 2
 
         if t_guessed_before:
             for type_ in [last_train.index(t) for t in
