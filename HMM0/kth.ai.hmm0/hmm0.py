@@ -1,51 +1,35 @@
-"""
-Do:
-Matrix multiplications
-
-Given information:
-From pi we know, at t=0 we arew in state "D"
-"""
 import sys
-from decimal import Decimal
 
+"""
+we always assume the input is given correct and does not has to be checked specifically
+"""
 def getMatricesFromStdIn():
     for num, line in enumerate(sys.stdin):
         line = line.replace('\n','')
+        if line[-1] == " ":
+            line = line[:-1]
         args = [float(val) for val in line.split(" ")]
-        row_count = int(args[1])
-        col_count = int(args[0])
+        row_count = int(args[0]) # could be used to check if it fits
+        col_count = int(args[1])
         args = args[2:]
-        print(args)
-
-        print([[args[cn] for cn in range(col_count)] for rn in range(row_count)])
-
-
+        args = [args[i:i + col_count] for i in range(0, len(args), col_count)]
+        
+        # create global variables for the matrices
         if num == 0:
-            #print("a")
+            global a
+            a = args
             pass
         elif num == 1:
-            #print("b")
+            global b
+            b = args
             pass
         elif num == 2:
-            #print("pi")
+            global pi
+            pi = args
             pass
         else:
             pass
 
-
-        #print(args)
-
-a = [[0.2, 0.5, 0.3, 0.0],
-     [0.1, 0.4, 0.4, 0.1],
-     [0.2, 0.0, 0.4, 0.4],
-     [0.2, 0.3, 0.0, 0.5]]
-
-b = [[1.0, 0.0, 0.0],
-     [0.0, 1.0, 0.0],
-     [0.0, 0.0, 1.0],
-     [0.2, 0.6, 0.2]]
-
-pi = [[0.0, 0.0, 0.0, 1.0]]
 
 """
 Transforms a row- to a column vector
@@ -65,7 +49,22 @@ def matrixMultiply(mat1, mat2):
             for val_idx in range(len(row)):
                 res_mat[row1_idx][col2_idx] += row[val_idx] * mat2[val_idx][col2_idx]
                 res_mat[row1_idx][col2_idx] = float("{:.8f}".format(res_mat[row1_idx][col2_idx])) # rounding to two digits
+
     return res_mat
+
+"""
+returns the column index of starting Observation in b-matrix
+
+Unused!!!
+"""
+def getStartObs(pi, b):
+    prob_list = [0 for x in range(len(b[0]))]
+
+    for state_idx, state in enumerate(b):
+        for obs_idx, obs in enumerate(state):
+            prob_list[obs_idx] += pi[0][state_idx] * obs
+
+    return prob_list.index(max(prob_list))
 
 def main():
     getMatricesFromStdIn()
@@ -75,6 +74,6 @@ def main():
     for val in next_emission[0]:
         str_out =  str_out + " " + str(val)
     print(str_out)
-
+    
 if __name__ == "__main__":
     main()

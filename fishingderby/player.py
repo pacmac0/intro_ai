@@ -209,7 +209,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         for fish, move in enumerate(observations):
             obs_sequences[fish].append(move)
         # build barier to accumulate observations to train on
-        if step <= 110 or len(guessed_fish) >= N_FISH: # no more guesses when all fish are guessed
+        if step <= 100 or len(guessed_fish) >= N_FISH: # no more guesses when all fish are guessed
             return None
         # guess bassed on trained models, by using alpha pass and choosing the max probabil for the sequence
 
@@ -229,7 +229,7 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         guess_species = [i for i, prob in enumerate(probabilities) if prob == max(probabilities)][0]
         # keep track of already guessed fish/ sequences to choose from the others for next guess
         guessed_fish.append(next_guess_fish)
-        #print('Guesses made: {}'.format(len(guessed_fish)))
+        print('Guesses made: {}'.format(len(guessed_fish)))
         return (next_guess_fish, guess_species)
 
     def reveal(self, correct, fish_id, true_type):
@@ -258,7 +258,9 @@ class PlayerControllerHMM(PlayerControllerHMMAbstract):
         # retrain model of fish with new information
          
         baum_welch_iterations = 1
+        
         if len(species_sequence_mapping[true_type]) < 1: # adjust training effored over time
-            baum_welch_iterations = 50
+            baum_welch_iterations = 1
+        
         models[true_type] = self.baumWelch(train_sequence, models[true_type], baum_welch_iterations)
         pass

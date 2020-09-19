@@ -1,5 +1,6 @@
 import sys
 import math
+import random
 
 """
 we always assume the input is given correct and does not has to be checked specifically
@@ -74,7 +75,7 @@ def reestimateA():
             numerator = 0
             for t in range(t_total-1):
                 numerator += di_gamma_t_list[t][i][j]
-            a[i][j] = numerator/denominator
+            a[i][j] = numerator/ (denominator + 0.001)
 
 # re-estimate B
 def reestimateB():
@@ -87,10 +88,72 @@ def reestimateB():
             for t in range(t_total):
                 if j == obs[t]:
                     numerator += gamma_t_list[t][i]
-            b[i][j] = numerator / denominator
+            
+            b[i][j] = numerator / (denominator + 0.001)
+
+def printResults():
+    str_out_a = str(len(a)) + ' ' +  str(len(a[0])) + ' '
+    for row in a:
+        for val in row:
+            str_out_a = str_out_a + str(round(val, 6)) + ' '
+    str_out_a = str_out_a.strip()
+    print(str_out_a)
+
+    str_out_b = str(len(b)) + ' ' +  str(len(b[0])) + ' '
+    for row in b:
+        for val in row:
+            str_out_b = str_out_b + str(round(val, 6)) + ' '
+    str_out_b = str_out_b.strip()
+    print(str_out_b)
+
+def initModel():
+    epsilon = 0.05
+    global a
+    a = [[random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)] for s in range(n)]
+    for row in a:
+        if sum(row) != 1.0:
+            row[-1] = 1 - sum(row[:-1])
+
+    global b
+    b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
+    for row in b:
+        if sum(row) != 1.0:
+            row[-1] = 1 - sum(row[:-1])
+
+    global pi
+    pi = [random.uniform((1 / n) - epsilon, (1 / n) + epsilon) for s in range(n)]
+    if sum(pi) != 1.0:
+        pi[-1] = 1 - sum(pi[:-1])
+
+def initModelUniform():
+    global a
+    a = [[1/n for s in range(n)] for s in range(n)]
+    global b
+    #b = [[1/m for s in range(m)] for s in range(n)]
+    epsilon = 0.05
+    b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
+    for row in b:
+        if sum(row) != 1.0:
+            row[-1] = 1 - sum(row[:-1])
+    global pi
+    pi = [1/n for s in range(n)]
+
+def initModelDiagonal():
+    global a
+    a = [[1,0,0],
+         [0,1,0],
+         [0,0,1]]
+    global b
+    epsilon = 0.05
+    b = [[random.uniform((1 / m) - epsilon, (1 / m) + epsilon) for s in range(m)] for s in range(n)]
+    for row in b:
+        if sum(row) != 1.0:
+            row[-1] = 1 - sum(row[:-1])
+    global pi
+    pi = [0,0,1]
 
 def main():
-    
+    """
     global a
     a = [[0.54, 0.26, 0.20], 
          [0.19, 0.53, 0.28], 
@@ -101,16 +164,32 @@ def main():
         [0.19, 0.21, 0.15, 0.45]]
     global pi
     pi = [0.3, 0.2, 0.5]
+    """
+    # similar init
+    global a
+    a = [[0.65, 0.09, 0.26], 
+         [0.15, 0.71, 0.24], 
+         [0.23, 0.2, 0.55]]
+    global b
+    b= [[0.6, 0.17, 0.17, 0.06],
+        [0.19, 0.45, 0.24, 0.12],
+        [0.09, 0.05, 0.24, 0.62]]
+    global pi
+    pi = [0.8, 0.1, 0.1]
     global n
     n = 3
     global m
     m = 4
+    
+    #initModel()
+    #initModelUniform()
+    #initModelDiagonal()
     getObservationsFromFile()
     
     #getMatricesFromStdIn()
     
     # iterating
-    max_interations = 500
+    max_interations =300
     iterations_done = 0
     oldLogProb = -float('inf')
     
@@ -187,22 +266,15 @@ def main():
         if iterations_done >= max_interations or logProb < oldLogProb:
             break
         oldLogProb = logProb
+
+        
+        
     # end while
-    str_out_a = str(len(a)) + ' ' +  str(len(a[0])) + ' '
-    for row in a:
-        for val in row:
-            str_out_a = str_out_a + str(round(val, 6)) + ' '
-    str_out_a = str_out_a.strip()
-    print(str_out_a)
-
-    str_out_b = str(len(b)) + ' ' +  str(len(b[0])) + ' '
-    for row in b:
-        for val in row:
-            str_out_b = str_out_b + str(round(val, 6)) + ' '
-    str_out_b = str_out_b.strip()
-    print(str_out_b)
+    
     #print('The training converged after {} iterations.'.format(iterations_done))
-
+    print(iterations_done)
+    printResults()
+    print()
 
 if __name__ == "__main__":
     main()
