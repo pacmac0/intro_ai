@@ -169,20 +169,23 @@ def main():
     # similar init
     eps = 1e-4
     global a
-    a = [[0.7 * random.uniform(1-eps, 1+eps), 0.05 * random.uniform(max(0, 1-eps), 1+eps), 0.25 * random.uniform(1-eps, 1+eps)],
-         [0.1 * random.uniform(1-eps, 1+eps), 0.8 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps)],
-         [0.2 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.5 * random.uniform(1-eps, 1+eps)]]
-    for i in range(len(a)):
-        a[i] = [a[i][j] / sum(a[i]) for j in range(len(a[i]))]
+    # a = [[0.7 * random.uniform(1-eps, 1+eps), 0.05 * random.uniform(max(0, 1-eps), 1+eps), 0.25 * random.uniform(1-eps, 1+eps)],
+    #      [0.1 * random.uniform(1-eps, 1+eps), 0.8 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps)],
+    #      [0.2 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.5 * random.uniform(1-eps, 1+eps)]]
+    a = [[0.69, 0.04, 0.24], [0.11, 0.82, 0.09], [0.22, 0.29, 0.51]]
+    # for i in range(len(a)):
+    #     a[i] = [a[i][j] / sum(a[i]) for j in range(len(a[i]))]
     global b
-    b= [[0.7 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps), random.uniform(0, eps)],
-        [0.1 * random.uniform(1-eps, 1+eps), 0.4 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps)],
-        [random.uniform(0, eps), 0.1 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.7 * random.uniform(1-eps, 1+eps)]]
-    for i in range(len(b)):
-        b[i] = [b[i][j] / sum(b[i]) for j in range(len(b[i]))]
+    b = [[0.71, 0.21, 0.11, 0.01], [0.09, 0.42, 0.29, 0.21], [0.01, 0.12, 0.19, 0.71]]
+    # b= [[0.7 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps), random.uniform(0, eps)],
+    #     [0.1 * random.uniform(1-eps, 1+eps), 0.4 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps)],
+    #     [random.uniform(0, eps), 0.1 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.7 * random.uniform(1-eps, 1+eps)]]
+    # for i in range(len(b)):
+    #     b[i] = [b[i][j] / sum(b[i]) for j in range(len(b[i]))]
     global pi
-    pi = [random.uniform(1-eps, 1), random.uniform(0, eps), random.uniform(0, eps)]
-    pi = [pi[j] / sum(pi) for j in range(len(pi))]
+    # pi = [random.uniform(1-eps, 1), random.uniform(0, eps), random.uniform(0, eps)]
+    # pi = [pi[j] / sum(pi) for j in range(len(pi))]
+    pi = [0.98, 0.01, 0.01]
     global n
     n = 3
     global m
