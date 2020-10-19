@@ -105,6 +105,7 @@ def printResults():
             str_out_b = str_out_b + str(round(val, 6)) + ' '
     str_out_b = str_out_b.strip()
     print(str_out_b)
+    print(pi)
 
 def initModel():
     epsilon = 0.05
@@ -166,20 +167,32 @@ def main():
     pi = [0.3, 0.2, 0.5]
     """
     # similar init
+    eps = 1e-4
     global a
-    a = [[0.65, 0.09, 0.26], 
-         [0.15, 0.71, 0.24], 
-         [0.23, 0.2, 0.55]]
+    a = [[0.7 * random.uniform(1-eps, 1+eps), 0.05 * random.uniform(max(0, 1-eps), 1+eps), 0.25 * random.uniform(1-eps, 1+eps)],
+         [0.1 * random.uniform(1-eps, 1+eps), 0.8 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps)],
+         [0.2 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.5 * random.uniform(1-eps, 1+eps)]]
+    for i in range(len(a)):
+        a[i] = [a[i][j] / sum(a[i]) for j in range(len(a[i]))]
     global b
-    b= [[0.6, 0.17, 0.17, 0.06],
-        [0.19, 0.45, 0.24, 0.12],
-        [0.09, 0.05, 0.24, 0.62]]
+    b= [[0.7 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.1 * random.uniform(1-eps, 1+eps), random.uniform(0, eps)],
+        [0.1 * random.uniform(1-eps, 1+eps), 0.4 * random.uniform(1-eps, 1+eps), 0.3 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps)],
+        [random.uniform(0, eps), 0.1 * random.uniform(1-eps, 1+eps), 0.2 * random.uniform(1-eps, 1+eps), 0.7 * random.uniform(1-eps, 1+eps)]]
+    for i in range(len(b)):
+        b[i] = [b[i][j] / sum(b[i]) for j in range(len(b[i]))]
     global pi
-    pi = [0.8, 0.1, 0.1]
+    pi = [random.uniform(1-eps, 1), random.uniform(0, eps), random.uniform(0, eps)]
+    pi = [pi[j] / sum(pi) for j in range(len(pi))]
     global n
     n = 3
     global m
     m = 4
+    print("a")
+    print(a)
+    print("b")
+    print(b)
+    print('pi')
+    print(pi)
     
     #initModel()
     #initModelUniform()
@@ -189,7 +202,7 @@ def main():
     #getMatricesFromStdIn()
     
     # iterating
-    max_interations =300
+    max_interations =1000
     iterations_done = 0
     oldLogProb = -float('inf')
     
